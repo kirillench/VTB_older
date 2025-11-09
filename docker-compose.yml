@@ -1,0 +1,45 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8080:8080"
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/multibank?sslmode=disable
+      - JWT_SECRET=super-secret-jwt-key
+      - ENCRYPTION_KEY=32-byte-long-encryption-key-12345678
+      - PORT=8080
+      - OAUTH_CLIENT_ID=${OAUTH_CLIENT_ID:-your_client_id}
+      - OAUTH_CLIENT_SECRET=${OAUTH_CLIENT_SECRET:-your_client_secret}
+      - OAUTH_REDIRECT_URL=${OAUTH_REDIRECT_URL:-http://localhost:8080/api/connect/callback}
+      - SANDBOX_BASE_URL=${SANDBOX_BASE_URL:-https://vbank.open.bankingapi.ru}
+    depends_on:
+      - db
+    volumes:
+      - ./backend:/app
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=http://localhost:8080/api
+    volumes:
+      - ./frontend/m:/app
+      - /app/node_modules
+    restart: unless-stopped
+
+  db:
+    image: postgres:14
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=multibank
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
